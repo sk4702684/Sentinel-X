@@ -1,0 +1,108 @@
+import streamlit as st
+import subprocess
+import pandas as pd
+import time
+import plotly.express as px
+
+# Page Configuration
+st.set_page_config(page_title="Sentinel-X Dashboard", page_icon="🛡️", layout="wide")
+
+# Custom CSS for that "Moody/Cyber" Aesthetic
+st.markdown("""
+    <style>
+    .stApp { background-color: #0b0e14; color: #00ffcc; }
+    .stButton>button { 
+        background-color: #00ffcc; color: #0b0e14; 
+        font-weight: bold; border: none; width: 100%;
+    }
+    .stTextInput>div>div>input { background-color: #1a1c23; color: #00ffcc; border: 1px solid #00ffcc; }
+    .metric-card { background-color: #161b22; padding: 15px; border-radius: 10px; border-left: 5px solid #00ffcc; }
+    </style>
+    """, unsafe_allow_html=True)
+
+# Sidebar with Hackathon/Team Info
+with st.sidebar:
+    st.title("🛡️ SENTINEL-X")
+    st.markdown("---")
+    st.subheader("Team Details")
+    st.info("**Lead:** Satyam\n\n**Members:** [SHASHANK SHEKHAR], [ADARSH RAJ], [ANKIT RAJ]")
+    st.markdown("---")
+    st.write("v1.0-Beta | Arch/Kali Linux")
+
+# Main Title Area
+st.title("🛡️ SENTINEL-X: Automated Pentesting Framework")
+st.caption("Simplified Multi-Tool Integration for Security Audits")
+
+# Input Section
+col_a, col_b = st.columns([3, 1])
+with col_a:
+    target = st.text_input("Enter Target IP or Hostname", placeholder="192.168.1.1 or scanme.nmap.org")
+with col_b:
+    st.write("##") # Alignment spacing
+    start_audit = st.button("Launch Security Audit")
+
+if start_audit:
+    if target:
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+        
+        with st.spinner(f"Initiating Engine... Scanning {target}"):
+            # --- STEP 1: NMAP SCAN ---
+            status_text.text("Step 1: Running Nmap Service Discovery...")
+            cmd = f"nmap -F -sV {target}"
+            process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, _ = process.communicate()
+            output = stdout.decode()
+            progress_bar.progress(60)
+
+            # Parsing Logic
+            scan_data = []
+            for line in output.split('\n'):
+                if '/tcp' in line:
+                    parts = line.split()
+                    port = parts[0]
+                    service = parts[2]
+                    version = " ".join(parts[3:]) if len(parts) > 3 else "N/A"
+                    # Simple Risk Heuristic
+                    risk = "High" if any(x in service.lower() for x in ["http", "ftp", "telnet"]) else "Medium"
+                    scan_data.append([port, service, version, risk])
+            
+            progress_bar.progress(100)
+            status_text.text("Audit Complete!")
+            time.sleep(1)
+            status_text.empty()
+            progress_bar.empty()
+
+            if scan_data:
+                df = pd.DataFrame(scan_data, columns=["Port", "Service", "Version", "Risk Level"])
+                
+                # --- RESULTS DASHBOARD ---
+                st.subheader("📊 Audit Summary")
+                m1, m2, m3 = st.columns(3)
+                m1.metric("Total Open Ports", len(df))
+                m2.metric("Critical Risks", len(df[df['Risk Level'] == 'High']))
+                m3.metric("Scan Status", "Success")
+
+                st.divider()
+
+                # Tabs for better organization
+                tab1, tab2, tab3 = st.tabs(["📋 Port Report", "📈 Risk Analysis", "📄 Raw Output"])
+                
+                with tab1:
+                    st.dataframe(df, use_container_width=True)
+                
+                with tab2:
+                    # Aesthetic Chart using Plotly
+                    fig = px.pie(df, names='Risk Level', title='Vulnerability Distribution',
+                                 color_discrete_map={'High':'#ff4b4b', 'Medium':'#ffa500'})
+                    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color="#00ffcc")
+                    st.plotly_chart(fig)
+                
+                with tab3:
+                    st.code(output, language='bash')
+                
+                st.download_button("Download Report (.csv)", df.to_csv(index=False), "sentinel_report.csv", "text/csv")
+            else:
+                st.error("No open ports detected. Target might be down or protected by a firewall.")
+    else:
+        st.warning("Please enter a target first.")

@@ -78,3 +78,37 @@ footer = """
     </div>
 """
 st.markdown(footer, unsafe_allow_html=True)
+# Ye lines app.py ke upar imports mein daal dena
+from fpdf import FPDF 
+
+# Ye function scanning logic ke paas daal dena
+def create_pdf(scan_results, target):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(200, 10, txt="Sentinel-X: Recon Report", ln=True, align='C')
+    pdf.set_font("Arial", size=12)
+    pdf.cell(200, 10, txt=f"Target: {target}", ln=True, align='L')
+    pdf.cell(200, 10, txt="---------------------------------------", ln=True, align='L')
+    
+    for res in scan_results:
+        text = f"Port: {res['Port']} | Status: {res['Status']} | Service: {res['Service Info']}"
+        pdf.cell(200, 10, txt=text, ln=True, align='L')
+    
+    # Copyright line in PDF
+    pdf.cell(200, 20, txt="© 2026 Satyam | Sentinel-X", ln=True, align='C')
+    return pdf.output(dest='S').encode('latin-1')
+
+# Scan results dikhane ke baad ye button dikhana
+if found_ports:
+    results_data = [{"Port": p[0], "Status": p[1], "Service Info": p[2]} for p in found_ports]
+    st.table(results_data)
+    
+    pdf_bytes = create_pdf(results_data, target_ip)
+    st.download_button(
+        label="📥 Download Report",
+        data=pdf_bytes,
+        file_name="SentinelX_Report.pdf",
+        mime="application/pdf"
+    )
+    

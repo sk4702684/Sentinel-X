@@ -17,3 +17,4 @@ git clone [https://github.com/sk4702684/Sentinel-X.git](https://github.com/sk470
 cd Sentinel-X
 pip install -r requirements.txt
 streamlit run app.py
+License: This project is licensed under the MIT License - see the LICENSE file for details.

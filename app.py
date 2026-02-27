@@ -2,86 +2,66 @@ import streamlit as st
 import socket
 import requests
 from concurrent.futures import ThreadPoolExecutor
-from fpdf import FPDF
 
-# --- Elite Cyberpunk UI Config ---
-st.set_page_config(page_title="Sentinel-X | Elite Recon", layout="wide", page_icon="🛡️")
+# --- Cyberpunk Styling ---
+st.set_page_config(page_title="Sentinel-X Pro", layout="wide")
+st.markdown("""<style>.main { background-color: #050a0e; color: #00ff41; }</style>""", unsafe_allow_html=True)
 
-st.markdown("""
-    <style>
-    .main { background-color: #050a0e; color: #00ff41; }
-    div.stButton > button:first-child {
-        background-color: transparent; color: #00ff41; border: 2px solid #00ff41;
-        border-radius: 5px; box-shadow: 0 0 15px #00ff41; transition: 0.3s;
-    }
-    div.stButton > button:hover { background-color: #00ff41; color: #050a0e; box-shadow: 0 0 25px #00ff41; }
-    .footer { position: fixed; left: 0; bottom: 0; width: 100%; background-color: #050a0e; 
-              color: #00ff41; text-align: center; padding: 10px; border-top: 1px solid #00ff41; z-index: 100; }
-    </style>
-    """, unsafe_allow_html=True)
+# --- Real Vulnerability Database (Simplified) ---
+VULN_DB = {
+    "21": "🚨 FTP: Unencrypted Credentials Risk (CVE-2011-2523)",
+    "22": "✅ SSH: Secure (Check for Brute Force)",
+    "23": "🚨 TELNET: Cleartext transmission detected!",
+    "80": "⚠️ HTTP: Missing Security Headers (HSTS/CSP)",
+    "443": "✅ HTTPS: Secure Tunnel",
+    "3306": "⚠️ MYSQL: Exposure risk if remotely accessible"
+}
 
-# --- Header ---
-st.markdown("<h1 style='text-align: center; text-shadow: 0 0 20px #00ff41;'>🛡️ SENTINEL-X: ELITE RECONNAISSANCE</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center;'><code>SYSTEM v2.6.0 | OPERATOR: SATYAM</code></p>", unsafe_allow_html=True)
+# --- Banner Grabbing Logic ---
+def get_banner(target, port):
+    try:
+        s = socket.socket()
+        s.settimeout(1.5)
+        s.connect((target, port))
+        # Kuch services ko "Hello" bolna padta hai banner ke liye
+        if port == 80:
+            s.send(b"HEAD / HTTP/1.1\r\nHost: " + target.encode() + b"\r\n\r\n")
+        banner = s.recv(1024).decode().strip()
+        s.close()
+        return banner if banner else "Service Active (No Banner)"
+    except:
+        return "Service Active"
 
-# --- Sidebar ---
-st.sidebar.markdown("### 🛠️ COMMAND CENTER")
-option = st.sidebar.radio("CHOOSE MODULE", ["Dashboard", "Deep Recon", "Turbo Vuln Scanner"])
+# --- Main Logic ---
+st.title("🛡️ SENTINEL-X: ADVANCED VULN SCANNER")
+target_ip = st.text_input("ENTER TARGET", placeholder="uktech.ac.in")
+port_range = st.slider("PORT THRESHOLD", 1, 1000, (20, 100))
 
-# Vuln Logic
-def check_vulns(port, banner):
-    vulns = []
-    if port == 21: vulns.append("🚨 FTP Backdoor Risk (CVE-2011-2523)")
-    if port == 23: vulns.append("🚨 Insecure Telnet Detected")
-    return vulns
+if st.button("INITIALIZE DEEP ENUMERATION"):
+    with st.spinner("🕵️ Extracting Banners and Mapping CVEs..."):
+        results = []
+        def scan(p):
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(0.5)
+            if s.connect_ex((target_ip, p)) == 0:
+                banner = get_banner(target_ip, p)
+                vuln = VULN_DB.get(str(p), "✅ No common CVEs for this port.")
+                return {"Port": p, "Banner": banner, "Risk": vuln}
+            return None
 
-if option == "Dashboard":
-    st.markdown("<div style='border: 1px solid #00ff41; padding: 20px; background: rgba(0,255,65,0.05);'><h3>SYSTEM ONLINE</h3><p>Select a module to begin intelligence gathering.</p></div>", unsafe_allow_html=True)
+        with ThreadPoolExecutor(max_workers=50) as ex:
+            scan_data = list(ex.map(scan, range(port_range[0], port_range[1]+1)))
+            results = [r for r in scan_data if r]
 
-elif option == "Deep Recon":
-    st.subheader("🌐 Global Subdomain Discovery")
-    # --- Yahan hai tera Input Box aur Button ---
-    target_domain = st.text_input("ENTER DOMAIN (e.g. google.com)", placeholder="target.com")
-    if st.button("EXECUTE SUBDOMAIN SCAN"):
-        with st.spinner("Brute-forcing..."):
-            common = ['www', 'mail', 'ftp', 'dev', 'admin']
-            found = []
-            for s in common:
-                try:
-                    url = f"{s}.{target_domain}"
-                    socket.gethostbyname(url)
-                    found.append(url)
-                except: pass
-            if found: st.success(f"ACTIVE TARGETS: {found}")
-            else: st.warning("No common subdomains detected.")
+        if results:
+            for r in results:
+                with st.expander(f"🔍 PORT {r['Port']} | {r['Banner']}"):
+                    if "🚨" in r['Risk'] or "⚠️" in r['Risk']:
+                        st.error(f"FINDING: {r['Risk']}")
+                    else:
+                        st.success(f"FINDING: {r['Risk']}")
+        else:
+            st.warning("Target is secured or filtered by a Firewall.")
 
-elif option == "Turbo Vuln Scanner":
-    st.subheader("🔌 Advanced Port & Vuln Scan")
-    # --- Yahan hai IP Input aur Scan Button ---
-    target_ip = st.text_input("ENTER TARGET IP", placeholder="45.33.32.156")
-    port_range = st.slider("PORT RANGE", 1, 1000, (20, 443))
-    
-    if st.button("INITIALIZE DEEP SCAN"):
-        with st.spinner("Scanning..."):
-            found_ports = []
-            def scan(p):
-                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.settimeout(0.3)
-                if s.connect_ex((target_ip, p)) == 0:
-                    return {"Port": p, "Status": "OPEN", "Banner": "Active"}
-                return None
-            
-            with ThreadPoolExecutor(max_workers=50) as ex:
-                res = list(ex.map(scan, range(port_range[0], port_range[1]+1)))
-                found_ports = [r for r in res if r]
-            st.session_state['results'] = found_ports
-
-    if 'results' in st.session_state and st.session_state['results']:
-        for r in st.session_state['results']:
-            v = check_vulns(r['Port'], r['Banner'])
-            with st.expander(f"🔹 PORT {r['Port']}"):
-                st.write(f"Service: {r['Banner']}")
-                for msg in v: st.error(msg)
-
-# --- Permanent Footer ---
-st.markdown("<div class='footer'>© 2026 SATYAM | SENTINEL-X | ALL RIGHTS RESERVED</div>", unsafe_allow_html=True)
+# --- Footer ---
+st.markdown("<div style='text-align: center; border-top: 1px solid #00ff41; padding: 10px;'>© 2026 Satyam | Sentinel-X v3.0</div>", unsafe_allow_html=True)

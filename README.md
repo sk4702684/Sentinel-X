@@ -11,10 +11,14 @@ Sentinel-X is a powerful, multi-threaded reconnaissance tool built with Python a
 - **Banner Grabbing:** Identify services running on open ports.
 - **Hacker UI:** Clean, dark-themed dashboard.
 
+## 📁 License
+- **This project is licensed under the MIT License - see the LICENSE file for details.
+
 ## 🛠️ Installation
 ```bash
 git clone [https://github.com/sk4702684/Sentinel-X.git](https://github.com/sk4702684/Sentinel-X.git)
 cd Sentinel-X
 pip install -r requirements.txt
 streamlit run app.py
-License: This project is licensed under the MIT License - see the LICENSE file for details.
+
+

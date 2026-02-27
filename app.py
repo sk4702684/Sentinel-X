@@ -97,8 +97,8 @@ def check_vulns(port, banner):
 
 if option == "Mission Dashboard":
     st.markdown("<div class='status-box'><h3>SYSTEM ONLINE</h3><p>Sentinel-X ready. Pulse animation active. Choose a module to begin.</p></div>", unsafe_allow_html=True)
-    # Pulse Animation Placeholder
-    st.markdown("![Pulse](https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJ6bmZ4bmZ4bmZ4bmZ4bmZ4bmZ4bmZ4bmZ4bmZ4bmZ4bmZ4JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1n/3o7TKMGpxvK9vR8KEE/giphy.gif)")
+    # Stable Cyber Pulse Animation
+    st.image("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJ6bmZ4bmZ4bmZ4bmZ4bmZ4bmZ4bmZ4bmZ4bmZ4bmZ4bmZ4JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1n/3o7TKMGpxvK9vR8KEE/giphy.gif", use_container_width=True)
 
 elif option == "Subdomain Recon":
     st.subheader("🌐 Global Subdomain Discovery")

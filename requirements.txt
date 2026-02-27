@@ -1,5 +1,5 @@
 streamlit
 requests
-fpdf
 folium
 streamlit-folium
+branca

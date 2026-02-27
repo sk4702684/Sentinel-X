@@ -55,3 +55,26 @@ elif option == "Port Scanner":
             st.success(f"Open Ports: {open_ports}")
         else:
             st.warning("No open ports found in this range.")
+            # --- Footer / Copyright Section ---
+st.markdown("---")
+footer = """
+    <style>
+    .footer {
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        background-color: #0e1117;
+        color: #00ff41;
+        text-align: center;
+        padding: 10px;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 14px;
+        border-top: 1px solid #00ff41;
+    }
+    </style>
+    <div class="footer">
+        <p>© 2026 Satyam | Sentinel-X Cyber Recon Tool | All Rights Reserved</p>
+    </div>
+"""
+st.markdown(footer, unsafe_allow_html=True)

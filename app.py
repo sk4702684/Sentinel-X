@@ -63,24 +63,36 @@ else:
         st.session_state['authenticated'] = False
         st.rerun()
 
-    # --- Tool 1: Mission Dashboard (MAP FIX APPLIED HERE) ---
+    # --- Tool 1: Mission Dashboard (LIVE LOCATION TRACKING FIX) ---
     if option == "Mission Dashboard":
         st.subheader("🌐 Global Target Intelligence")
-        target_ip = st.text_input("ENTER IP", placeholder="8.8.8.8")
-        if st.button("LOCATE"):
+        target_ip = st.text_input("ENTER IP FOR LIVE TRACKING", placeholder="8.8.8.8")
+        if st.button("LOCATE TARGET"):
             try:
+                # IP-API se exact lat/lon lena
                 res = requests.get(f"http://ip-api.com/json/{target_ip}").json()
                 if res['status'] == 'success':
-                    st.info(f"Target: {res['city']}, {res['country']} | ISP: {res['isp']}")
+                    lat, lon = res['lat'], res['lon']
+                    st.success(f"LIVE TRACKING: {res['city']}, {res['regionName']}, {res['country']}")
+                    st.code(f"Coordinates: Lat {lat}, Lon {lon} | ISP: {res['isp']}")
                     
-                    # Fix: Added 'tiles' update and 'returned_objects' to stop blank screen
-                    m = folium.Map(location=[res['lat'], res['lon']], zoom_start=12, tiles="OpenStreetMap")
-                    folium.Marker([res['lat'], res['lon']], popup=target_ip).add_to(m)
+                    # Fix: Zoom level ko 15 kiya (Street Level) aur Location ko center kiya
+                    m = folium.Map(location=[lat, lon], zoom_start=15, tiles="OpenStreetMap")
                     
-                    # Rendering with specific parameters to force display
-                    st_folium(m, width=1000, height=450, key="sentinel_map", returned_objects=[])
-                else: st.error("Invalid IP Address.")
-            except Exception as e: st.error(f"Map Error: {e}")
+                    # Exact Location Marker
+                    folium.Marker(
+                        [lat, lon], 
+                        popup=f"Target: {target_ip}", 
+                        tooltip="Click for Details",
+                        icon=folium.Icon(color='red', icon='screenshot', prefix='glyphicon')
+                    ).add_to(m)
+                    
+                    # Circle for Area Precision
+                    folium.Circle([lat, lon], radius=500, color='red', fill=True, fill_opacity=0.2).add_to(m)
+                    
+                    st_folium(m, width=1100, height=500, key="live_track_map", returned_objects=[])
+                else: st.error("Invalid IP or Private Network detected.")
+            except Exception as e: st.error(f"Satellite Link Error: {e}")
 
     # --- Tool 2: Deep Recon (UNTOUCHED) ---
     elif option == "Deep Recon":
